@@ -6,11 +6,12 @@ import javax.swing.table.DefaultTableModel;
 
 public class PerpustakaanGUI {
     private JFrame frame;
-    private JPanel mainPanel, loginPanel, daftarPanel, menuPanel;
+    private JPanel loginPanel, daftarPanel, menuPanel;
     private JTable table;
     private DefaultTableModel tableModel;
     private java.util.List<User> userList = new ArrayList<>();
     private java.util.List<Buku> bukuList = new ArrayList<>();
+    private JTextField searchField;
 
     public PerpustakaanGUI() {
         initUser();
@@ -27,8 +28,9 @@ public class PerpustakaanGUI {
     private void initBuku() {
         bukuList.add(new Buku("B001", "Java Dasar", "Ani", 2018, "Tersedia"));
         bukuList.add(new Buku("B002", "Pemrograman Web", "Budi", 2020, "Tersedia"));
-    }
+        bukuList.add(new Buku("B003", "Belajar PHP ", "Budi", 2020, "Tersedia"));
 
+    }
     private void initFrame() {
         frame = new JFrame("Aplikasi Perpustakaan");
         frame.setSize(800, 600);
@@ -220,28 +222,60 @@ public class PerpustakaanGUI {
     private void showMainMenu() {
         menuPanel = new JPanel(new BorderLayout());
 
+        // Panel untuk search bar
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JLabel searchLabel = new JLabel("Cari Buku:");
+        searchField = new JTextField(20);
+        searchPanel.add(searchLabel);
+        searchPanel.add(searchField);
+
         String[] columnNames = {"ID", "Judul", "Penulis", "Tahun", "Status"};
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(table);
 
+        // Add mouse listener to table rows
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                int row = table.rowAtPoint(evt.getPoint());
+                if (row >= 0) {
+                    Buku selectedBuku = bukuList.get(row);
+                    showBookDetailPanel(selectedBuku);
+                }
+            }
+        });
+
         JPanel buttonPanel = new JPanel();
-        JButton pinjamBtn = new JButton("Pinjam Buku");
-        JButton kembaliBtn = new JButton("Kembalikan Buku");
+        // JButton pinjamBtn = new JButton("Pinjam Buku");
+        // JButton kembaliBtn = new JButton("Kembalikan Buku");
         JButton logoutBtn = new JButton("Logout");
 
-        buttonPanel.add(pinjamBtn);
-        buttonPanel.add(kembaliBtn);
+        // buttonPanel.add(pinjamBtn);
+        // buttonPanel.add(kembaliBtn);
         buttonPanel.add(logoutBtn);
 
-        pinjamBtn.addActionListener(e -> pinjamBuku());
-        kembaliBtn.addActionListener(e -> kembalikanBuku());
+        // pinjamBtn.addActionListener(e -> pinjamBuku());
+        // kembaliBtn.addActionListener(e -> kembalikanBuku());
         logoutBtn.addActionListener(e -> showLoginPanel());
 
+        menuPanel.add(searchPanel, BorderLayout.NORTH);
         menuPanel.add(scrollPane, BorderLayout.CENTER);
         menuPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        refreshTable();
+        // Tambahkan listener untuk searchField
+        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                filterTable(searchField.getText());
+            }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                filterTable(searchField.getText());
+            }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                filterTable(searchField.getText());
+            }
+        });
+
+        refreshTable(bukuList);
         frame.setContentPane(menuPanel);
         frame.revalidate();
     }
@@ -253,13 +287,89 @@ public class PerpustakaanGUI {
         }
     }
 
+    private void showBookDetailPanel(Buku buku) {
+        JPanel detailPanel = new JPanel();
+        detailPanel.setLayout(new BoxLayout(detailPanel, BoxLayout.Y_AXIS));
+        detailPanel.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+
+        JLabel titleLabel = new JLabel("Detail Buku");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel idLabel = new JLabel("ID: " + buku.getId());
+        idLabel.setFont(new Font("Arial", Font.PLAIN, 18));
+        idLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel judulLabel = new JLabel("Judul: " + buku.getJudul());
+        judulLabel.setFont(new Font("Arial", Font.PLAIN, 18));
+        judulLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel penulisLabel = new JLabel("Penulis: " + buku.getPenulis());
+        penulisLabel.setFont(new Font("Arial", Font.PLAIN, 18));
+        penulisLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel tahunLabel = new JLabel("Tahun Terbit: " + buku.getTahunTerbit());
+        tahunLabel.setFont(new Font("Arial", Font.PLAIN, 18));
+        tahunLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel statusLabel = new JLabel("Status: " + buku.getStatus());
+        statusLabel.setFont(new Font("Arial", Font.PLAIN, 18));
+        statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JPanel buttonPanel = new JPanel();
+        JButton actionBtn;
+        JButton batalBtn = new JButton("Batal");
+
+        actionBtn = new JButton(buku.getStatus().equals("Tersedia") ? "Pinjam" : "Kembalikan");
+
+        actionBtn.setPreferredSize(new Dimension(100, 30));
+        batalBtn.setPreferredSize(new Dimension(100, 30));
+
+        buttonPanel.add(actionBtn);
+        buttonPanel.add(batalBtn);
+
+        actionBtn.addActionListener(e -> {
+            if (buku.getStatus().equals("Tersedia")) {
+                buku.setStatus("Dipinjam (kembali: " + LocalDate.now().plusDays(7) + ")");
+                refreshTable(bukuList);
+                showMainMenu();
+            } else {
+                buku.setStatus("Tersedia");
+                refreshTable(bukuList);
+                showMainMenu();
+            }
+        });
+
+        batalBtn.addActionListener(e -> showMainMenu());
+
+        detailPanel.add(titleLabel);
+        detailPanel.add(Box.createVerticalStrut(20));
+        detailPanel.add(idLabel);
+        detailPanel.add(judulLabel);
+        detailPanel.add(penulisLabel);
+        detailPanel.add(tahunLabel);
+        detailPanel.add(statusLabel);
+        detailPanel.add(Box.createVerticalStrut(30));
+        detailPanel.add(buttonPanel);
+
+        frame.setContentPane(detailPanel);
+        frame.revalidate();
+    }
+
+    private void refreshTable(java.util.List<Buku> list) {
+        tableModel.setRowCount(0);
+        for (Buku b : list) {
+            tableModel.addRow(new Object[]{b.getId(), b.getJudul(), b.getPenulis(), b.getTahunTerbit(), b.getStatus()});
+        }
+    }
+
     private void pinjamBuku() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow >= 0) {
             String status = (String) tableModel.getValueAt(selectedRow, 4);
             if (status.equals("Tersedia")) {
                 bukuList.get(selectedRow).setStatus("Dipinjam (kembali: " + LocalDate.now().plusDays(7) + ")");
-                refreshTable();
+                refreshTable(bukuList);
             } else {
                 JOptionPane.showMessageDialog(frame, "Buku sudah dipinjam.");
             }
@@ -274,7 +384,7 @@ public class PerpustakaanGUI {
             String status = (String) tableModel.getValueAt(selectedRow, 4);
             if (!status.equals("Tersedia")) {
                 bukuList.get(selectedRow).setStatus("Tersedia");
-                refreshTable();
+                refreshTable(bukuList);
             } else {
                 JOptionPane.showMessageDialog(frame, "Buku belum dipinjam.");
             }
@@ -285,5 +395,20 @@ public class PerpustakaanGUI {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(PerpustakaanGUI::new);
+    }
+
+    private void filterTable(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            refreshTable(bukuList);
+            return;
+        }
+        String lowerQuery = query.toLowerCase();
+        java.util.List<Buku> filtered = new ArrayList<>();
+        for (Buku b : bukuList) {
+            if (b.getJudul().toLowerCase().contains(lowerQuery) || b.getPenulis().toLowerCase().contains(lowerQuery)) {
+                filtered.add(b);
+            }
+        }
+        refreshTable(filtered);
     }
 }
