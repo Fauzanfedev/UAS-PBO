@@ -13,6 +13,26 @@ public class PerpustakaanGUI {
     private java.util.List<Buku> bukuList = new ArrayList<>();
     private JTextField searchField;
 
+    private User currentUser; 
+
+
+    private java.util.Map<String, java.util.List<BorrowedBook>> borrowedBooksMap = new HashMap<>();
+
+
+    private static class BorrowedBook {
+        Buku buku;
+        LocalDate tanggalPinjam;
+        LocalDate tanggalKembali;
+        double denda;
+
+        BorrowedBook(Buku buku, LocalDate tanggalPinjam, LocalDate tanggalKembali, double denda) {
+            this.buku = buku;
+            this.tanggalPinjam = tanggalPinjam;
+            this.tanggalKembali = tanggalKembali;
+            this.denda = denda;
+        }
+    }
+
     public PerpustakaanGUI() {
         initUser();
         initBuku();
@@ -148,6 +168,7 @@ public class PerpustakaanGUI {
         String password = new String(tfPassword.getPassword());
         for (User u : userList) {
             if (u.getId().equals(id) && u.getNama().equals(nama) && u.getPassword().equals(password) && u.getRole().equals(role)) {
+                currentUser = u; // set current user on successful login
                 showMainMenu();
                 return;
             }
@@ -245,18 +266,33 @@ public class PerpustakaanGUI {
             }
         });
 
-        JPanel buttonPanel = new JPanel();
+        JPanel buttonPanel = new JPanel(new BorderLayout());
+
+        JPanel leftButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton userBtn = new JButton("User");
+        leftButtonPanel.add(userBtn);
+
+        JPanel rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // Remove Pinjam Buku and Kembalikan Buku buttons as requested
         // JButton pinjamBtn = new JButton("Pinjam Buku");
         // JButton kembaliBtn = new JButton("Kembalikan Buku");
         JButton logoutBtn = new JButton("Logout");
 
-        // buttonPanel.add(pinjamBtn);
-        // buttonPanel.add(kembaliBtn);
-        buttonPanel.add(logoutBtn);
+        // rightButtonPanel.add(pinjamBtn);
+        // rightButtonPanel.add(kembaliBtn);
+        rightButtonPanel.add(logoutBtn);
+
+        buttonPanel.add(leftButtonPanel, BorderLayout.WEST);
+        buttonPanel.add(rightButtonPanel, BorderLayout.EAST);
 
         // pinjamBtn.addActionListener(e -> pinjamBuku());
         // kembaliBtn.addActionListener(e -> kembalikanBuku());
-        logoutBtn.addActionListener(e -> showLoginPanel());
+        logoutBtn.addActionListener(e -> {
+            currentUser = null; // clear current user on logout
+            showLoginPanel();
+        });
+
+        userBtn.addActionListener(e -> showUserInfo());
 
         menuPanel.add(searchPanel, BorderLayout.NORTH);
         menuPanel.add(scrollPane, BorderLayout.CENTER);
@@ -280,12 +316,7 @@ public class PerpustakaanGUI {
         frame.revalidate();
     }
 
-    private void refreshTable() {
-        tableModel.setRowCount(0);
-        for (Buku b : bukuList) {
-            tableModel.addRow(new Object[]{b.getId(), b.getJudul(), b.getPenulis(), b.getTahunTerbit(), b.getStatus()});
-        }
-    }
+    // Removed unused refreshTable() method without parameters
 
     private void showBookDetailPanel(Buku buku) {
         JPanel detailPanel = new JPanel();
@@ -330,11 +361,40 @@ public class PerpustakaanGUI {
 
         actionBtn.addActionListener(e -> {
             if (buku.getStatus().equals("Tersedia")) {
+                // Borrow book: update status and borrowedBooksMap
                 buku.setStatus("Dipinjam (kembali: " + LocalDate.now().plusDays(7) + ")");
+                if (currentUser != null) {
+                    java.util.List<BorrowedBook> borrowedList = borrowedBooksMap.getOrDefault(currentUser.getId(), new ArrayList<>());
+                    borrowedList.add(new BorrowedBook(buku, LocalDate.now(), LocalDate.now().plusDays(7), 0));
+                    borrowedBooksMap.put(currentUser.getId(), borrowedList);
+                }
                 refreshTable(bukuList);
                 showMainMenu();
             } else {
+                // Return book: update status and borrowedBooksMap, calculate denda
                 buku.setStatus("Tersedia");
+                if (currentUser != null) {
+                    java.util.List<BorrowedBook> borrowedList = borrowedBooksMap.getOrDefault(currentUser.getId(), new ArrayList<>());
+                    BorrowedBook toRemove = null;
+                    for (BorrowedBook bb : borrowedList) {
+                        if (bb.buku.getId().equals(buku.getId())) {
+                            // Calculate denda if returned late
+                            LocalDate now = LocalDate.now();
+                            if (now.isAfter(bb.tanggalKembali)) {
+                                long daysLate = java.time.temporal.ChronoUnit.DAYS.between(bb.tanggalKembali, now);
+                                bb.denda = daysLate * 5000; // example fine 5000 per day
+                            } else {
+                                bb.denda = 0;
+                            }
+                            toRemove = bb;
+                            break;
+                        }
+                    }
+                    if (toRemove != null) {
+                        borrowedList.remove(toRemove);
+                    }
+                    borrowedBooksMap.put(currentUser.getId(), borrowedList);
+                }
                 refreshTable(bukuList);
                 showMainMenu();
             }
@@ -363,28 +423,38 @@ public class PerpustakaanGUI {
         }
     }
 
-    private void pinjamBuku() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow >= 0) {
-            String status = (String) tableModel.getValueAt(selectedRow, 4);
-            if (status.equals("Tersedia")) {
-                bukuList.get(selectedRow).setStatus("Dipinjam (kembali: " + LocalDate.now().plusDays(7) + ")");
-                refreshTable(bukuList);
-            } else {
-                JOptionPane.showMessageDialog(frame, "Buku sudah dipinjam.");
-            }
-        } else {
-            JOptionPane.showMessageDialog(frame, "Pilih buku terlebih dahulu.");
-        }
-    }
-
     private void kembalikanBuku() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow >= 0) {
             String status = (String) tableModel.getValueAt(selectedRow, 4);
             if (!status.equals("Tersedia")) {
-                bukuList.get(selectedRow).setStatus("Tersedia");
+                Buku buku = bukuList.get(selectedRow);
+                buku.setStatus("Tersedia");
                 refreshTable(bukuList);
+
+                // Update borrowedBooksMap for currentUser
+                if (currentUser != null) {
+                    java.util.List<BorrowedBook> borrowedList = borrowedBooksMap.getOrDefault(currentUser.getId(), new ArrayList<>());
+                    BorrowedBook toRemove = null;
+                    for (BorrowedBook bb : borrowedList) {
+                        if (bb.buku.getId().equals(buku.getId())) {
+                            // Calculate denda if returned late
+                            LocalDate now = LocalDate.now();
+                            if (now.isAfter(bb.tanggalKembali)) {
+                                long daysLate = java.time.temporal.ChronoUnit.DAYS.between(bb.tanggalKembali, now);
+                                bb.denda = daysLate * 5000; // example fine 5000 per day
+                            } else {
+                                bb.denda = 0;
+                            }
+                            toRemove = bb;
+                            break;
+                        }
+                    }
+                    if (toRemove != null) {
+                        borrowedList.remove(toRemove);
+                    }
+                    borrowedBooksMap.put(currentUser.getId(), borrowedList);
+                }
             } else {
                 JOptionPane.showMessageDialog(frame, "Buku belum dipinjam.");
             }
@@ -395,6 +465,44 @@ public class PerpustakaanGUI {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(PerpustakaanGUI::new);
+    }
+
+    private void showUserInfo() {
+        if (currentUser == null) {
+            JOptionPane.showMessageDialog(frame, "Tidak ada user yang login.");
+            return;
+        }
+
+        JPanel userInfoPanel = new JPanel();
+        userInfoPanel.setLayout(new BoxLayout(userInfoPanel, BoxLayout.Y_AXIS));
+        userInfoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel nameLabel = new JLabel("Nama: " + currentUser.getNama());
+        JLabel idLabel = new JLabel("ID: " + currentUser.getId());
+
+        userInfoPanel.add(nameLabel);
+        userInfoPanel.add(idLabel);
+        userInfoPanel.add(Box.createVerticalStrut(10));
+
+        String[] columnNames = {"Judul", "Tanggal Pinjam", "Tanggal Pengembalian", "Denda"};
+        DefaultTableModel borrowedTableModel = new DefaultTableModel(columnNames, 0);
+        JTable borrowedTable = new JTable(borrowedTableModel);
+        JScrollPane scrollPane = new JScrollPane(borrowedTable);
+        scrollPane.setPreferredSize(new Dimension(500, 200));
+
+        java.util.List<BorrowedBook> borrowedList = borrowedBooksMap.getOrDefault(currentUser.getId(), new ArrayList<>());
+        for (BorrowedBook bb : borrowedList) {
+            borrowedTableModel.addRow(new Object[]{
+                bb.buku.getJudul(),
+                bb.tanggalPinjam,
+                bb.tanggalKembali,
+                bb.denda > 0 ? "Rp " + bb.denda : "-"
+            });
+        }
+
+        userInfoPanel.add(scrollPane);
+
+        JOptionPane.showMessageDialog(frame, userInfoPanel, "Informasi Akun", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void filterTable(String query) {
@@ -412,3 +520,4 @@ public class PerpustakaanGUI {
         refreshTable(filtered);
     }
 }
+            
