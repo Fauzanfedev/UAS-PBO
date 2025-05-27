@@ -123,6 +123,7 @@ public class PerpustakaanGUI {
     formLogin.add(new JLabel("ID:"), gbc);
 
     JTextField tfId = new JTextField(15);
+    tfId.setMaximumSize(new Dimension(300, 30));
     gbc.gridx = 1;
     formLogin.add(tfId, gbc);
 
@@ -131,6 +132,7 @@ public class PerpustakaanGUI {
     formLogin.add(new JLabel("Nama:"), gbc);
 
     JTextField tfNama = new JTextField(15);
+    tfNama.setMaximumSize(new Dimension(300, 30));
     gbc.gridx = 1;
     formLogin.add(tfNama, gbc);
 
@@ -139,6 +141,7 @@ public class PerpustakaanGUI {
     formLogin.add(new JLabel("Password:"), gbc);
 
     JPasswordField tfPassword = new JPasswordField(15);
+    tfPassword.setMaximumSize(new Dimension(300, 30));
     gbc.gridx = 1;
     formLogin.add(tfPassword, gbc);
 
@@ -150,14 +153,18 @@ public class PerpustakaanGUI {
     JPanel btnPanel = new JPanel(new FlowLayout());
     JButton btnMasuk = new JButton("Masuk");
     JButton btnDaftar = new JButton("Daftar");
+    JButton btnKembali = new JButton("Kembali"); // Tambah tombol kembali
 
     btnMasuk.setPreferredSize(new Dimension(100, 30));
     btnDaftar.setPreferredSize(new Dimension(100, 30));
+    btnKembali.setPreferredSize(new Dimension(100, 30));
     btnMasuk.setBackground(new Color(173, 216, 230));
     btnDaftar.setBackground(new Color(144, 238, 144));
+    btnKembali.setBackground(new Color(255, 204, 204));
 
     btnPanel.add(btnMasuk);
     btnPanel.add(btnDaftar);
+    btnPanel.add(btnKembali);
 
     formLogin.add(btnPanel, gbc);
 
@@ -168,7 +175,7 @@ public class PerpustakaanGUI {
         String password = new String(tfPassword.getPassword());
         for (User u : userList) {
             if (u.getId().equals(id) && u.getNama().equals(nama) && u.getPassword().equals(password) && u.getRole().equals(role)) {
-                currentUser = u; // set current user on successful login
+                currentUser = u;
                 showMainMenu();
                 return;
             }
@@ -177,6 +184,7 @@ public class PerpustakaanGUI {
     });
 
     btnDaftar.addActionListener(e -> showDaftarPanel(role));
+    btnKembali.addActionListener(e -> showLoginPanel()); // Aksi kembali ke halaman selamat datang
 
     frame.setContentPane(formLogin);
     frame.revalidate();
@@ -192,27 +200,67 @@ public class PerpustakaanGUI {
         title.setFont(new Font("Arial", Font.BOLD, 18));
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JTextField tfId = new JTextField();
-        JTextField tfNama = new JTextField();
-        JPasswordField tfPassword = new JPasswordField();
-        JButton btnSubmit = new JButton("Daftar");
+        // GridBagLayout untuk form, label di kiri, field di kanan
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setOpaque(false);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(1, 6, 1, 0); // Jarak antar field sangat kecil
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        btnSubmit.setMaximumSize(new Dimension(150, 30));
-        btnSubmit.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Baris ID
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        JLabel idLabel = new JLabel("ID:");
+        formPanel.add(idLabel, gbc);
+        gbc.gridx = 1;
+        JTextField tfId = new JTextField();
+        tfId.setPreferredSize(new Dimension(250, 24));
+        formPanel.add(tfId, gbc);
+
+        // Baris Nama
+        gbc.gridx = 0;
+        gbc.gridy++;
+        JLabel namaLabel = new JLabel("Nama:");
+        formPanel.add(namaLabel, gbc);
+        gbc.gridx = 1;
+        JTextField tfNama = new JTextField();
+        tfNama.setPreferredSize(new Dimension(300, 24));
+        formPanel.add(tfNama, gbc);
+
+        // Baris Password
+        gbc.gridx = 0;
+        gbc.gridy++;
+        JLabel passLabel = new JLabel("Password:");
+        formPanel.add(passLabel, gbc);
+        gbc.gridx = 1;
+        JPasswordField tfPassword = new JPasswordField();
+        tfPassword.setPreferredSize(new Dimension(300, 24));
+        formPanel.add(tfPassword, gbc);
+
+        // Tombol daftar & kembali
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        JButton btnSubmit = new JButton("Daftar");
+        btnSubmit.setPreferredSize(new Dimension(120, 26));
         btnSubmit.setBackground(new Color(144, 238, 144));
+        btnSubmit.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JButton btnKembali = new JButton("Kembali");
+        btnKembali.setPreferredSize(new Dimension(120, 26));
+        btnKembali.setBackground(new Color(255, 204, 204));
+
+        JPanel btnPanel = new JPanel();
+        btnPanel.setOpaque(false);
+        btnPanel.add(btnSubmit);
+        btnPanel.add(btnKembali);
+        formPanel.add(btnPanel, gbc);
 
         daftarPanel.add(title);
-        daftarPanel.add(Box.createVerticalStrut(15));
-        daftarPanel.add(new JLabel("ID:"));
-        daftarPanel.add(tfId);
-        daftarPanel.add(Box.createVerticalStrut(10));
-        daftarPanel.add(new JLabel("Nama:"));
-        daftarPanel.add(tfNama);
-        daftarPanel.add(Box.createVerticalStrut(10));
-        daftarPanel.add(new JLabel("Password:"));
-        daftarPanel.add(tfPassword);
-        daftarPanel.add(Box.createVerticalStrut(20));
-        daftarPanel.add(btnSubmit);
+        daftarPanel.add(Box.createVerticalStrut(0));
+        daftarPanel.add(formPanel);
 
         btnSubmit.addActionListener(e -> {
             String id = tfId.getText().trim();
@@ -235,6 +283,8 @@ public class PerpustakaanGUI {
             JOptionPane.showMessageDialog(frame, "Pendaftaran berhasil, silakan login.");
             showFormLogin(role);
         });
+
+        btnKembali.addActionListener(e -> showLoginPanel()); // Aksi kembali ke halaman selamat datang
 
         frame.setContentPane(daftarPanel);
         frame.revalidate();
@@ -520,4 +570,3 @@ public class PerpustakaanGUI {
         refreshTable(filtered);
     }
 }
-            
