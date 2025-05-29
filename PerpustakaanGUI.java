@@ -927,155 +927,177 @@ public class PerpustakaanGUI {
         frame.revalidate();
     }
 
-    // Removed unused refreshTable() method without parameters
-
     private void showBookDetailPanel(Buku buku) {
-        JPanel detailPanel = new JPanel();
-        detailPanel.setLayout(new BoxLayout(detailPanel, BoxLayout.Y_AXIS));
-        detailPanel.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+    JPanel detailPanel = new JPanel(new BorderLayout());
 
-        JLabel titleLabel = new JLabel("Detail Buku");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    JLabel titleLabel = new JLabel("Detail Buku", SwingConstants.CENTER);
+    titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
+    titleLabel.setBorder(BorderFactory.createEmptyBorder(30, 0, 20, 0));
+    detailPanel.add(titleLabel, BorderLayout.NORTH);
 
-        // Cover buku sesuai jenis/judul buku
-        JLabel coverLabel = new JLabel();
-        coverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    // Panel tengah: cover dan detail (sejajar di tengah)
+    JPanel centerPanel = new JPanel(new GridBagLayout());
+    centerPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.insets = new Insets(0, 30, 0, 30); // jarak kiri-kanan antar panel
+    gbc.gridx = 0;
+    gbc.gridy = 0;
+    gbc.anchor = GridBagConstraints.CENTER;
 
-        String coverPath;
-        if (buku.getJudul().equalsIgnoreCase("Java Dasar")) {
-            coverPath = "cover/java.jpg";
-            if (!new java.io.File(coverPath).exists()) {
-                coverPath = "cover/java.jpeg";
-            }
-        } else if (buku.getJudul().equalsIgnoreCase("Pemrograman Web")) {
-            coverPath = "cover/pbw.jpg";
-            if (!new java.io.File(coverPath).exists()) {
-                coverPath = "cover/pbw.jpeg";
-            }
-        } else if (buku.getJudul().equalsIgnoreCase("Belajar PHP")) {
-            coverPath = "cover/php.jpg";
-            if (!new java.io.File(coverPath).exists()) {
-                coverPath = "cover/php.jpeg";
-            }
-        } else if (buku.getJudul().equalsIgnoreCase("Database MySQL")) {
-            coverPath = "cover/sql.jpg";
-            if (!new java.io.File(coverPath).exists()) {
-                coverPath = "cover/sql.jpeg";
-            }
-        } else {
-            coverPath = "cover/" + buku.getJudul() + ".jpg";
-            if (!new java.io.File(coverPath).exists()) {
-                coverPath = "cover/" + buku.getJudul() + ".jpeg";
-            }
-        }
-        java.io.File coverFile = new java.io.File(coverPath);
-        ImageIcon coverIcon;
-        if (coverFile.exists()) {
-            coverIcon = new ImageIcon(coverPath);
-        } else {
-            BufferedImage img = new BufferedImage(120, 160, BufferedImage.TYPE_INT_RGB);
-            Graphics2D g = img.createGraphics();
-            g.setColor(Color.LIGHT_GRAY);
-            g.fillRect(0, 0, 120, 160);
-            g.setColor(Color.DARK_GRAY);
-            g.drawString("No Image", 25, 80);
-            g.dispose();
-            coverIcon = new ImageIcon(img);
-        }
-        Image img = coverIcon.getImage().getScaledInstance(120, 160, Image.SCALE_SMOOTH);
-        coverLabel.setIcon(new ImageIcon(img));
+    // Cover Panel
+    JPanel coverPanel = new JPanel();
+    coverPanel.setOpaque(false);
+    JLabel coverLabel = new JLabel();
+    coverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel idLabel = new JLabel("ID: " + buku.getId());
-        idLabel.setFont(new Font("Arial", Font.PLAIN, 18));
-        idLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    String coverPath;
+    if (buku.getJudul().equalsIgnoreCase("Java Dasar")) {
+        coverPath = "cover/java.jpg";
+        if (!new java.io.File(coverPath).exists()) coverPath = "cover/java.jpeg";
+    } else if (buku.getJudul().equalsIgnoreCase("Pemrograman Web")) {
+        coverPath = "cover/pbw.jpg";
+        if (!new java.io.File(coverPath).exists()) coverPath = "cover/pbw.jpeg";
+    } else if (buku.getJudul().equalsIgnoreCase("Belajar PHP")) {
+        coverPath = "cover/php.jpg";
+        if (!new java.io.File(coverPath).exists()) coverPath = "cover/php.jpeg";
+    } else if (buku.getJudul().equalsIgnoreCase("Database MySQL")) {
+        coverPath = "cover/sql.jpg";
+        if (!new java.io.File(coverPath).exists()) coverPath = "cover/sql.jpeg";
+    } else {
+        coverPath = "cover/" + buku.getJudul() + ".jpg";
+        if (!new java.io.File(coverPath).exists()) coverPath = "cover/" + buku.getJudul() + ".jpeg";
+    }
+    java.io.File coverFile = new java.io.File(coverPath);
+    ImageIcon coverIcon;
+    if (coverFile.exists()) {
+        coverIcon = new ImageIcon(coverPath);
+    } else {
+        BufferedImage img = new BufferedImage(200, 270, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = img.createGraphics();
+        g.setColor(Color.LIGHT_GRAY);
+        g.fillRect(0, 0, 200, 270);
+        g.setColor(Color.DARK_GRAY);
+        g.setFont(new Font("Arial", Font.BOLD, 20));
+        g.drawString("No Image", 45, 135);
+        g.dispose();
+        coverIcon = new ImageIcon(img);
+    }
+    Image img = coverIcon.getImage().getScaledInstance(200, 270, Image.SCALE_SMOOTH);
+    coverLabel.setIcon(new ImageIcon(img));
+    coverPanel.add(coverLabel);
 
-        JLabel judulLabel = new JLabel("Judul: " + buku.getJudul());
-        judulLabel.setFont(new Font("Arial", Font.PLAIN, 18));
-        judulLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    // Panel detail (keterangan buku)
+    JPanel infoPanel = new JPanel();
+    infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+    infoPanel.setOpaque(false);
+    infoPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 10, 40));
 
-        JLabel penulisLabel = new JLabel("Penulis: " + buku.getPenulis());
-        penulisLabel.setFont(new Font("Arial", Font.PLAIN, 18));
-        penulisLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    Font infoFont = new Font("Arial", Font.PLAIN, 22);
 
-        JLabel tahunLabel = new JLabel("Tahun Terbit: " + buku.getTahunTerbit());
-        tahunLabel.setFont(new Font("Arial", Font.PLAIN, 18));
-        tahunLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    JLabel idLabel = new JLabel("ID                   : " + buku.getId());
+    idLabel.setFont(infoFont);
+    idLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel statusLabel = new JLabel("Status: " + buku.getStatus());
-        statusLabel.setFont(new Font("Arial", Font.PLAIN, 18));
-        statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    JLabel judulLabel = new JLabel("Judul              : " + buku.getJudul());
+    judulLabel.setFont(infoFont);
+    judulLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JPanel buttonPanel = new JPanel();
-        JButton actionBtn;
-        JButton batalBtn = new JButton("Batal");
+    JLabel penulisLabel = new JLabel("Penulis           : " + buku.getPenulis());
+    penulisLabel.setFont(infoFont);
+    penulisLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        actionBtn = new JButton(buku.getStatus().equals("Tersedia") ? "Pinjam" : "Kembalikan");
+    JLabel tahunLabel = new JLabel("Tahun Terbit  : " + buku.getTahunTerbit());
+    tahunLabel.setFont(infoFont);
+    tahunLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        actionBtn.setPreferredSize(new Dimension(100, 30));
-        batalBtn.setPreferredSize(new Dimension(100, 30));
+    JLabel statusLabel = new JLabel("Status            : " + buku.getStatus());
+    statusLabel.setFont(infoFont);
+    statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        buttonPanel.add(actionBtn);
-        buttonPanel.add(batalBtn);
+    infoPanel.add(idLabel);
+    infoPanel.add(Box.createVerticalStrut(8));
+    infoPanel.add(judulLabel);
+    infoPanel.add(Box.createVerticalStrut(8));
+    infoPanel.add(penulisLabel);
+    infoPanel.add(Box.createVerticalStrut(8));
+    infoPanel.add(tahunLabel);
+    infoPanel.add(Box.createVerticalStrut(8));
+    infoPanel.add(statusLabel);
 
-        actionBtn.addActionListener(e -> {
-            if (buku.getStatus().equals("Tersedia")) {
-                // Borrow book: update status and borrowedBooksMap
-                buku.setStatus("Dipinjam (kembali: " + LocalDate.now().plusDays(7) + ")");
-                if (currentUser != null) {
-                    java.util.List<BorrowedBook> borrowedList = borrowedBooksMap.getOrDefault(currentUser.getId(), new ArrayList<>());
+    // Tambahkan ke centerPanel dengan GridBagLayout
+    gbc.gridx = 0;
+    centerPanel.add(coverPanel, gbc);
+    gbc.gridx = 1;
+    centerPanel.add(infoPanel, gbc);
+
+    detailPanel.add(centerPanel, BorderLayout.CENTER);
+
+    // Panel tombol di bawah
+    JPanel buttonPanel = new JPanel();
+    JButton actionBtn = new JButton(buku.getStatus().equals("Tersedia") ? "Pinjam" : "Kembalikan");
+    JButton batalBtn = new JButton("Batal");
+    actionBtn.setPreferredSize(new Dimension(120, 38));
+    batalBtn.setPreferredSize(new Dimension(120, 38));
+    actionBtn.setFont(new Font("Arial", Font.BOLD, 16));
+    batalBtn.setFont(new Font("Arial", Font.BOLD, 16));
+    buttonPanel.add(actionBtn);
+    buttonPanel.add(batalBtn);
+
+    detailPanel.add(centerPanel, BorderLayout.CENTER);
+    detailPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+    // Action listeners
+    actionBtn.addActionListener(e -> {
+        if (buku.getStatus().equals("Tersedia")) {
+            buku.setStatus("Dipinjam (kembali: " + LocalDate.now().plusDays(7) + ")");
+            if (currentUser != null) {
+                java.util.List<BorrowedBook> borrowedList = borrowedBooksMap.getOrDefault(currentUser.getId(), new ArrayList<>());
+                boolean alreadyBorrowed = false;
+                for (BorrowedBook bb : borrowedList) {
+                    if (bb.buku.getId().equals(buku.getId())) {
+                        alreadyBorrowed = true;
+                        break;
+                    }
+                }
+                if (!alreadyBorrowed) {
                     borrowedList.add(new BorrowedBook(buku, LocalDate.now(), LocalDate.now().plusDays(7), 0));
                     borrowedBooksMap.put(currentUser.getId(), borrowedList);
+                    refreshTable(bukuList);
+                    showMainMenu();
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Anda sudah meminjam buku ini.");
                 }
-                refreshTable(bukuList);
-                showMainMenu();
-            } else {
-                // Return book: update status and borrowedBooksMap, calculate denda
-                buku.setStatus("Tersedia");
-                if (currentUser != null) {
-                    java.util.List<BorrowedBook> borrowedList = borrowedBooksMap.getOrDefault(currentUser.getId(), new ArrayList<>());
-                    BorrowedBook toRemove = null;
-                    for (BorrowedBook bb : borrowedList) {
-                        if (bb.buku.getId().equals(buku.getId())) {
-                            // Calculate denda if returned late
-                            LocalDate now = LocalDate.now();
-                            if (now.isAfter(bb.tanggalKembali)) {
-                                long daysLate = java.time.temporal.ChronoUnit.DAYS.between(bb.tanggalKembali, now);
-                                bb.denda = daysLate * 5000; // example fine 5000 per day
-                            } else {
-                                bb.denda = 0;
-                            }
-                            toRemove = bb;
-                            break;
-                        }
-                    }
-                    if (toRemove != null) {
-                        borrowedList.remove(toRemove);
-                    }
-                    borrowedBooksMap.put(currentUser.getId(), borrowedList);
-                }
-                refreshTable(bukuList);
-                showMainMenu();
             }
-        });
+        } else {
+            buku.setStatus("Tersedia");
+            if (currentUser != null) {
+                java.util.List<BorrowedBook> borrowedList = borrowedBooksMap.getOrDefault(currentUser.getId(), new ArrayList<>());
+                BorrowedBook toRemove = null;
+                for (BorrowedBook bb : borrowedList) {
+                    if (bb.buku.getId().equals(buku.getId())) {
+                        LocalDate now = LocalDate.now();
+                        if (now.isAfter(bb.tanggalKembali)) {
+                            long daysLate = java.time.temporal.ChronoUnit.DAYS.between(bb.tanggalKembali, now);
+                            bb.denda = daysLate * 5000;
+                        } else {
+                            bb.denda = 0;
+                        }
+                        toRemove = bb;
+                        break;
+                    }
+                }
+                if (toRemove != null) borrowedList.remove(toRemove);
+                borrowedBooksMap.put(currentUser.getId(), borrowedList);
+            }
+            refreshTable(bukuList);
+            showMainMenu();
+        }
+    });
+    batalBtn.addActionListener(e -> showMainMenu());
 
-        batalBtn.addActionListener(e -> showMainMenu());
-
-        detailPanel.add(titleLabel);
-        detailPanel.add(Box.createVerticalStrut(20));
-        detailPanel.add(coverLabel);
-        detailPanel.add(Box.createVerticalStrut(20));
-        detailPanel.add(idLabel);
-        detailPanel.add(judulLabel);
-        detailPanel.add(penulisLabel);
-        detailPanel.add(tahunLabel);
-        detailPanel.add(statusLabel);
-        detailPanel.add(Box.createVerticalStrut(30));
-        detailPanel.add(buttonPanel);
-
-        frame.setContentPane(detailPanel);
-        frame.revalidate();
-    }
+    frame.setContentPane(detailPanel);
+    frame.revalidate();
+}
 
     private void refreshTable(java.util.List<Buku> list) {
         tableModel.setRowCount(0);
@@ -1096,6 +1118,7 @@ public class PerpustakaanGUI {
                 // Update borrowedBooksMap for currentUser
                 if (currentUser != null) {
                     java.util.List<BorrowedBook> borrowedList = borrowedBooksMap.getOrDefault(currentUser.getId(), new ArrayList<>());
+
                     BorrowedBook toRemove = null;
                     for (BorrowedBook bb : borrowedList) {
                         if (bb.buku.getId().equals(buku.getId())) {
