@@ -1,4 +1,5 @@
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.List;
@@ -937,6 +938,54 @@ public class PerpustakaanGUI {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        // Cover buku sesuai jenis/judul buku
+        JLabel coverLabel = new JLabel();
+        coverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        String coverPath;
+        if (buku.getJudul().equalsIgnoreCase("Java Dasar")) {
+            coverPath = "cover/java.jpg";
+            if (!new java.io.File(coverPath).exists()) {
+                coverPath = "cover/java.jpeg";
+            }
+        } else if (buku.getJudul().equalsIgnoreCase("Pemrograman Web")) {
+            coverPath = "cover/pbw.jpg";
+            if (!new java.io.File(coverPath).exists()) {
+                coverPath = "cover/pbw.jpeg";
+            }
+        } else if (buku.getJudul().equalsIgnoreCase("Belajar PHP")) {
+            coverPath = "cover/php.jpg";
+            if (!new java.io.File(coverPath).exists()) {
+                coverPath = "cover/php.jpeg";
+            }
+        } else if (buku.getJudul().equalsIgnoreCase("Database MySQL")) {
+            coverPath = "cover/sql.jpg";
+            if (!new java.io.File(coverPath).exists()) {
+                coverPath = "cover/sql.jpeg";
+            }
+        } else {
+            coverPath = "cover/" + buku.getJudul() + ".jpg";
+            if (!new java.io.File(coverPath).exists()) {
+                coverPath = "cover/" + buku.getJudul() + ".jpeg";
+            }
+        }
+        java.io.File coverFile = new java.io.File(coverPath);
+        ImageIcon coverIcon;
+        if (coverFile.exists()) {
+            coverIcon = new ImageIcon(coverPath);
+        } else {
+            BufferedImage img = new BufferedImage(120, 160, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = img.createGraphics();
+            g.setColor(Color.LIGHT_GRAY);
+            g.fillRect(0, 0, 120, 160);
+            g.setColor(Color.DARK_GRAY);
+            g.drawString("No Image", 25, 80);
+            g.dispose();
+            coverIcon = new ImageIcon(img);
+        }
+        Image img = coverIcon.getImage().getScaledInstance(120, 160, Image.SCALE_SMOOTH);
+        coverLabel.setIcon(new ImageIcon(img));
+
         JLabel idLabel = new JLabel("ID: " + buku.getId());
         idLabel.setFont(new Font("Arial", Font.PLAIN, 18));
         idLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -1013,6 +1062,8 @@ public class PerpustakaanGUI {
         batalBtn.addActionListener(e -> showMainMenu());
 
         detailPanel.add(titleLabel);
+        detailPanel.add(Box.createVerticalStrut(20));
+        detailPanel.add(coverLabel);
         detailPanel.add(Box.createVerticalStrut(20));
         detailPanel.add(idLabel);
         detailPanel.add(judulLabel);
